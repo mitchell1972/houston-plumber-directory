@@ -9,12 +9,12 @@ import type { Metadata } from "next";
 
 // Pre-render top 50 combinations at build time; rest generated on-demand via ISR
 export async function generateStaticParams() {
-  const params: { serviceSlug: string; areaSlug: string }[] = [];
+  const params: { slug: string; areaSlug: string }[] = [];
   const topAreas = seoAreas.slice(0, 10); // Inner-loop neighborhoods
   const topServices = seoServices.slice(0, 5); // Most popular services
   for (const service of topServices) {
     for (const area of topAreas) {
-      params.push({ serviceSlug: service.slug, areaSlug: area.slug });
+      params.push({ slug: service.slug, areaSlug: area.slug });
     }
   }
   return params;
@@ -26,10 +26,10 @@ export const revalidate = 86400; // Revalidate every 24 hours
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ serviceSlug: string; areaSlug: string }>;
+  params: Promise<{ slug: string; areaSlug: string }>;
 }): Promise<Metadata> {
-  const { serviceSlug, areaSlug } = await params;
-  const service = getServiceBySlug(serviceSlug);
+  const { slug, areaSlug } = await params;
+  const service = getServiceBySlug(slug);
   const area = getAreaBySlug(areaSlug);
   if (!service || !area) return { title: "Not Found" };
 
@@ -39,7 +39,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: `/services/${serviceSlug}/${areaSlug}` },
+    alternates: { canonical: `/services/${slug}/${areaSlug}` },
     openGraph: {
       title: `${service.name} in ${area.name}, Houston TX`,
       description,
@@ -51,10 +51,10 @@ export async function generateMetadata({
 export default async function ServiceAreaPage({
   params,
 }: {
-  params: Promise<{ serviceSlug: string; areaSlug: string }>;
+  params: Promise<{ slug: string; areaSlug: string }>;
 }) {
-  const { serviceSlug, areaSlug } = await params;
-  const service = getServiceBySlug(serviceSlug);
+  const { slug, areaSlug } = await params;
+  const service = getServiceBySlug(slug);
   const area = getAreaBySlug(areaSlug);
   if (!service || !area) notFound();
 
