@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, readFile, mkdir } from "fs/promises";
 import path from "path";
+import { notify } from "@/lib/notify";
 
 const CLAIMS_DIR = path.join(process.cwd(), "leads");
 const CLAIMS_FILE = path.join(CLAIMS_DIR, "claims.json");
@@ -54,7 +55,11 @@ export async function POST(request: NextRequest) {
   claims.push(claim);
   await saveClaims(claims);
 
-  console.log("New claim/listing request:", claim);
+  await notify({
+    subject: `💰 New ${claim.plan.toUpperCase()} ${claim.type === "claim" ? "Claim" : "Listing"}: ${claim.businessName}`,
+    kind: claim.type,
+    data: claim as unknown as Record<string, unknown>,
+  });
 
   return NextResponse.json({ success: true, id: claim.id });
 }

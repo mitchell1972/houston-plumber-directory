@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, readFile, mkdir } from "fs/promises";
 import path from "path";
+import { notify } from "@/lib/notify";
 
 const LEADS_DIR = path.join(process.cwd(), "leads");
 const LEADS_FILE = path.join(LEADS_DIR, "leads.json");
@@ -50,11 +51,11 @@ export async function POST(request: NextRequest) {
   leads.push(lead);
   await saveLeads(leads);
 
-  // In production, you would:
-  // 1. Send email notification to you
-  // 2. Send SMS to matched plumbers
-  // 3. Store in a real database (Supabase, etc.)
-  console.log("New lead received:", lead);
+  await notify({
+    subject: `🔔 New Plumbing Lead: ${lead.service} (${lead.zip})`,
+    kind: "lead",
+    data: lead as unknown as Record<string, unknown>,
+  });
 
   return NextResponse.json({ success: true, id: lead.id });
 }

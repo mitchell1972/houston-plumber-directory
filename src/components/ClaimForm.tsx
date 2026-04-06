@@ -37,12 +37,28 @@ export default function ClaimForm({
     };
 
     try {
-      await fetch("/api/claims", {
+      const claimRes = await fetch("/api/claims", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      const claimJson = await claimRes.json().catch(() => ({}));
       trackClaimSubmit(plan, type, plumberSlug);
+
+      // For paid plans, redirect to Stripe Checkout
+      if (plan === "featured" || plan === "premium") {
+        const checkoutRes = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan, claimId: claimJson.id, email: data.email }),
+        });
+        const checkoutJson = await checkoutRes.json();
+        if (checkoutJson.url) {
+          window.location.href = checkoutJson.url;
+          return;
+        }
+        // Stripe not configured yet — fall through to thank-you screen
+      }
       setSubmitted(true);
     } catch {
       alert("Something went wrong. Please email us at hello@houstonplumberdirectory.com");
