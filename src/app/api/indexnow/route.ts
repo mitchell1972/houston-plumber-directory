@@ -5,8 +5,11 @@ const INDEXNOW_KEY = "7f4a7e20eb3075081b0f37df9dd9367e";
 const HOST = "houstonplumberdirectory.com";
 const BASE_URL = `https://${HOST}`;
 const KEY_LOCATION = `${BASE_URL}/${INDEXNOW_KEY}.txt`;
-const INDEXNOW_API = "https://api.indexnow.org/indexnow";
-const BATCH_SIZE = 10_000;
+const INDEXNOW_ENDPOINTS = [
+  "https://www.bing.com/indexnow",
+  "https://yandex.com/indexnow",
+];
+const BATCH_SIZE = 5_000;
 
 function buildAllUrls(): string[] {
   const urls: string[] = [];
@@ -36,7 +39,7 @@ function buildAllUrls(): string[] {
   return urls;
 }
 
-async function submitBatch(urlList: string[]): Promise<{ status: number; count: number }> {
+async function submitBatch(urlList: string[]): Promise<{ engine: string; status: number; count: number }[]> {
   const body = {
     host: HOST,
     key: INDEXNOW_KEY,
@@ -44,25 +47,28 @@ async function submitBatch(urlList: string[]): Promise<{ status: number; count: 
     urlList,
   };
 
-  const response = await fetch(INDEXNOW_API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify(body),
-  });
-
-  return { status: response.status, count: urlList.length };
+  const results: { engine: string; status: number; count: number }[] = [];
+  for (const endpoint of INDEXNOW_ENDPOINTS) {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify(body),
+    });
+    results.push({ engine: endpoint, status: response.status, count: urlList.length });
+  }
+  return results;
 }
 
 export async function GET() {
   try {
     const allUrls = buildAllUrls();
-    const results: { batch: number; status: number; count: number }[] = [];
+    const results: { batch: number; submissions: { engine: string; status: number; count: number }[] }[] = [];
 
     for (let i = 0; i < allUrls.length; i += BATCH_SIZE) {
       const batch = allUrls.slice(i, i + BATCH_SIZE);
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-      const result = await submitBatch(batch);
-      results.push({ batch: batchNumber, ...result });
+      const submissions = await submitBatch(batch);
+      results.push({ batch: batchNumber, submissions });
     }
 
     return NextResponse.json({
