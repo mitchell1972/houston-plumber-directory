@@ -4,9 +4,39 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Find a Plumber in Houston TX | HoustonPlumberPros",
+  metadataBase: new URL("https://houstonplumberdirectory.com"),
+  title: {
+    default: "Find a Plumber in Houston TX | HoustonPlumberPros",
+    template: "%s | HoustonPlumberPros",
+  },
   description: "Find licensed, insured plumbers in Houston, TX. Compare ratings, read reviews, and get free quotes. Emergency plumbers available 24/7.",
   keywords: "plumber houston, plumber near me, houston plumber, emergency plumber houston, drain cleaning houston, water heater repair houston",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "HoustonPlumberPros",
+    title: "Find a Plumber in Houston TX | HoustonPlumberPros",
+    description: "Find licensed, insured plumbers in Houston, TX. Compare ratings, read reviews, and get free quotes. Emergency plumbers available 24/7.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Find a Plumber in Houston TX | HoustonPlumberPros",
+    description: "Find licensed, insured plumbers in Houston, TX. Compare ratings, read reviews, and get free quotes.",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({

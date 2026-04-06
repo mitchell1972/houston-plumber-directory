@@ -15,6 +15,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${service.name} Houston TX | Best ${service.name} Services`,
     description: service.description,
+    alternates: {
+      canonical: `/services/${slug}`,
+    },
+    openGraph: {
+      title: `${service.name} in Houston, TX`,
+      description: service.description,
+      type: "website",
+    },
   };
 }
 
@@ -29,8 +37,60 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   );
   const displayPlumbers = matchingPlumbers.length > 0 ? matchingPlumbers : plumbers.slice(0, 5);
 
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    serviceType: serviceName,
+    provider: {
+      "@type": "LocalBusiness",
+      name: "HoustonPlumberPros",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Houston",
+        addressRegion: "TX",
+        addressCountry: "US",
+      },
+    },
+    areaServed: {
+      "@type": "City",
+      name: "Houston",
+      containedInPlace: {
+        "@type": "State",
+        name: "Texas",
+      },
+    },
+    description: service.description,
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Houston Plumbers",
+        item: "https://houstonplumberdirectory.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: serviceName,
+        item: `https://houstonplumberdirectory.com/services/${slug}`,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <section className="bg-blue-900 text-white py-12">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-4xl font-bold">{serviceName} in Houston, TX</h1>

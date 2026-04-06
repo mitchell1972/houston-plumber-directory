@@ -3,12 +3,72 @@ import QuoteForm from "@/components/QuoteForm";
 import Link from "next/link";
 import { plumbers, services, areas } from "@/data/plumbers";
 
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "How much does a plumber cost in Houston?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Most Houston plumbers charge $75-150 for a service call, plus parts and labor. Emergency and after-hours calls may cost more. Drain cleaning typically costs $100-300, while water heater replacement runs $800-2,500 depending on the unit.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How do I find a licensed plumber in Houston?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "All plumbers listed on HoustonPlumberPros are licensed and insured. You can also verify a plumber's license through the Texas State Board of Plumbing Examiners.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do Houston plumbers offer free estimates?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Most plumbers listed here offer free estimates for major repairs and installations. Some charge a diagnostic fee for service calls, which is typically waived if you proceed with the repair.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I get an emergency plumber in Houston 24/7?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Several plumbers in our directory offer 24/7 emergency service for burst pipes, sewage backups, flooding, and other urgent issues. Use our quote form for fastest response.",
+      },
+    },
+  ],
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HoustonPlumberPros",
+  url: "https://houstonplumberdirectory.com",
+  description: "Find licensed, insured plumbers in Houston, TX. Compare ratings, read reviews, and get free quotes.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://houstonplumberdirectory.com/services/{search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default function Home() {
   const premiumPlumbers = plumbers.filter((p) => p.premium);
   const regularPlumbers = plumbers.filter((p) => !p.premium);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       {/* Hero */}
       <section className="bg-blue-900 text-white py-16">
         <div className="max-w-6xl mx-auto px-4">

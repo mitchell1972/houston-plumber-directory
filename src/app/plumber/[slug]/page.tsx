@@ -15,6 +15,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${plumber.name} - Houston Plumber | Reviews & Contact`,
     description: `${plumber.name} - Licensed plumber in Houston, TX. ${plumber.rating} stars from ${plumber.reviewCount} reviews. Services: ${plumber.services.join(", ")}. Call ${plumber.phone}.`,
+    alternates: {
+      canonical: `/plumber/${slug}`,
+    },
+    openGraph: {
+      title: `${plumber.name} - Licensed Houston Plumber`,
+      description: `${plumber.rating} stars from ${plumber.reviewCount} reviews. ${plumber.services.slice(0, 3).join(", ")} and more. Call ${plumber.phone}.`,
+      type: "website",
+    },
   };
 }
 
@@ -23,7 +31,72 @@ export default async function PlumberPage({ params }: { params: Promise<{ slug: 
   const plumber = plumbers.find((p) => p.slug === slug);
   if (!plumber) notFound();
 
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "Plumber",
+    name: plumber.name,
+    telephone: plumber.phone,
+    url: plumber.website || undefined,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Houston",
+      addressRegion: "TX",
+      addressCountry: "US",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 29.7604,
+      longitude: -95.3698,
+    },
+    areaServed: plumber.areas.map((area) => ({
+      "@type": "City",
+      name: area,
+    })),
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: plumber.rating,
+      reviewCount: plumber.reviewCount,
+      bestRating: 5,
+      worstRating: 1,
+    },
+    priceRange: "$$",
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      opens: "00:00",
+      closes: "23:59",
+    },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Houston Plumbers",
+        item: "https://houstonplumberdirectory.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: plumber.name,
+        item: `https://houstonplumberdirectory.com/plumber/${plumber.slug}`,
+      },
+    ],
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
     <div className="max-w-6xl mx-auto px-4 py-8">
       <nav className="text-sm text-gray-500 mb-6">
         <Link href="/" className="hover:text-blue-600">Houston Plumbers</Link>
@@ -115,5 +188,6 @@ export default async function PlumberPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
     </div>
+    </>
   );
 }
