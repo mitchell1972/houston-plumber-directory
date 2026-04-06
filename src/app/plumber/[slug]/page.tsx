@@ -181,6 +181,19 @@ export default async function PlumberPage({ params }: { params: Promise<{ slug: 
 
           {/* Quote form */}
           <QuoteForm source={`plumber-${plumber.slug}`} />
+
+          {/* Claim listing CTA */}
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 text-center">
+            <p className="text-sm text-gray-700">
+              <strong>Is this your business?</strong>
+            </p>
+            <Link
+              href={`/plumber/${plumber.slug}/claim`}
+              className="inline-block mt-2 text-blue-700 font-bold underline hover:text-blue-900"
+            >
+              Claim this listing →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -48,3 +48,17 @@ export function trackQuoteSubmit(source: string, service: string) {
 export function trackQuoteStart(source: string) {
   track("begin_quote", { source });
 }
+
+export function trackClaimSubmit(plan: string, type: "claim" | "new_listing", plumberSlug?: string) {
+  track("claim_listing", {
+    plan,
+    type,
+    plumber_slug: plumberSlug,
+    value: plan === "premium" ? 99 : plan === "featured" ? 29 : 0,
+    currency: "USD",
+  });
+}
+
+export function trackPricingView(source: string) {
+  track("view_pricing", { source });
+}

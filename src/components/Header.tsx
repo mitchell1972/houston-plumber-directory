@@ -12,6 +12,7 @@ export default function Header() {
           <Link href="/services/emergency-plumber" className="hover:text-yellow-400 transition">Emergency</Link>
           <Link href="/services/drain-cleaning" className="hover:text-yellow-400 transition">Drain Cleaning</Link>
           <Link href="/services/water-heater-repair" className="hover:text-yellow-400 transition">Water Heaters</Link>
+          <Link href="/list-your-business" className="hover:text-yellow-400 transition">For Plumbers</Link>
           <Link href="/get-quote" className="bg-yellow-400 text-blue-900 px-4 py-2 rounded font-bold hover:bg-yellow-300 transition">
             Get Free Quote
           </Link>
