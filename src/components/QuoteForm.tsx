@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { trackQuoteSubmit } from "@/lib/analytics";
 
 export default function QuoteForm({ source }: { source?: string }) {
   const [submitted, setSubmitted] = useState(false);
@@ -26,6 +27,7 @@ export default function QuoteForm({ source }: { source?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      trackQuoteSubmit(data.source, data.service);
       setSubmitted(true);
     } catch {
       alert("Something went wrong. Please call us directly.");

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { plumbers } from "@/data/plumbers";
 import QuoteForm from "@/components/QuoteForm";
+import PlumberContactCard from "@/components/PlumberContactCard";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -171,17 +172,12 @@ export default async function PlumberPage({ params }: { params: Promise<{ slug: 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Contact card */}
-          <div className="bg-white rounded-lg border p-6 text-center">
-            <h3 className="font-bold text-lg mb-4">Contact {plumber.name}</h3>
-            <a href={`tel:${plumber.phone}`} className="block bg-green-600 text-white py-3 rounded font-bold text-lg hover:bg-green-700 transition">
-              {plumber.phone}
-            </a>
-            {plumber.website && (
-              <a href={plumber.website} target="_blank" rel="noopener noreferrer" className="block mt-3 border border-blue-600 text-blue-600 py-3 rounded font-bold hover:bg-blue-50 transition">
-                Visit Website
-              </a>
-            )}
-          </div>
+          <PlumberContactCard
+            name={plumber.name}
+            slug={plumber.slug}
+            phone={plumber.phone}
+            website={plumber.website}
+          />
 
           {/* Quote form */}
           <QuoteForm source={`plumber-${plumber.slug}`} />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Plumber } from "@/data/plumbers";
+import PlumberCallButton from "./PlumberCallButton";
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -38,9 +39,7 @@ export default function PlumberCard({ plumber }: { plumber: Plumber }) {
           <p className="text-sm text-gray-500 mt-1">{plumber.reviewCount} reviews &middot; {plumber.yearsInBusiness} years in business</p>
         </div>
         <div className="text-right flex-shrink-0 ml-4">
-          <a href={`tel:${plumber.phone}`} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 transition text-sm inline-block">
-            {plumber.phone}
-          </a>
+          <PlumberCallButton name={plumber.name} slug={plumber.slug} phone={plumber.phone} source="plumber_card" />
           <div className="mt-2 flex gap-2 justify-end">
             {plumber.licensed && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Licensed</span>}
             {plumber.insured && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Insured</span>}
