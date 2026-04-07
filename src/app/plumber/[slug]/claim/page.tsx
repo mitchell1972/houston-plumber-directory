@@ -1,16 +1,19 @@
 import { notFound } from "next/navigation";
-import { plumbers } from "@/data/plumbers";
+import { getPlumberBySlug, getPlumberSlugs } from "@/lib/plumbers";
 import ClaimForm from "@/components/ClaimForm";
 import Link from "next/link";
 import type { Metadata } from "next";
 
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
-  return plumbers.map((p) => ({ slug: p.slug }));
+  const slugs = await getPlumberSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const plumber = plumbers.find((p) => p.slug === slug);
+  const plumber = await getPlumberBySlug(slug);
   if (!plumber) return { title: "Claim Listing" };
   return {
     title: `Claim ${plumber.name} | Houston Plumber Directory`,
@@ -21,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ClaimPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const plumber = plumbers.find((p) => p.slug === slug);
+  const plumber = await getPlumberBySlug(slug);
   if (!plumber) notFound();
 
   return (

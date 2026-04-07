@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { revalidatePath } from "next/cache";
 import { notify } from "@/lib/notify";
 import { supabase } from "@/lib/supabase";
 
-// Stripe webhook handler — verifies signature, processes events, updates claims, notifies you.
+// Stripe webhook handler — verifies signature, processes events, updates claims
+// AND the plumbers table so paid upgrades actually appear on the live site.
 //
 // Required env vars:
 //   STRIPE_WEBHOOK_SECRET — whsec_... (from Stripe Dashboard → Developers → Webhooks → Signing secret)
 //
 // Events handled:
-//   checkout.session.completed       → subscription started (mark claim active, notify)
-//   customer.subscription.deleted    → cancellation (notify)
+//   checkout.session.completed       → subscription started (mark claim active, flip plumber flags, notify)
+//   customer.subscription.deleted    → cancellation (unflag plumber, notify)
 //   invoice.payment_failed           → failed payment (notify)
 //   invoice.payment_succeeded        → recurring payment (silent, just logged)
+//
+// Architecture note: plumber_slug is threaded through Stripe metadata (session + subscription)
+// by the checkout endpoint, so this webhook never needs to SELECT from the claims table —
+// which matters because the anon role only has INSERT/UPDATE policies on claims, not SELECT.
 
 export const runtime = "nodejs"; // crypto requires Node runtime, not Edge
 
@@ -51,7 +57,13 @@ function verifyStripeSignature(payload: string, header: string | null, secret: s
   }
 }
 
-async function markClaimActive(claimId: string | undefined, subscriptionId: string, plan: string) {
+// Fire-and-forget update of the claims row. We don't read anything back
+// because the anon role has no SELECT policy on claims.
+async function markClaimActive(
+  claimId: string | undefined,
+  subscriptionId: string,
+  plan: string
+): Promise<void> {
   if (!claimId || !supabase) return;
   const { error } = await supabase
     .from("claims")
@@ -62,7 +74,59 @@ async function markClaimActive(claimId: string | undefined, subscriptionId: stri
       activated_at: new Date().toISOString(),
     })
     .eq("id", claimId);
-  if (error) console.error("Failed to mark claim active:", error);
+  if (error) {
+    console.error("Failed to mark claim active:", error);
+  }
+}
+
+// Flip is_featured / is_premium on the plumbers row that matches this slug.
+// Also updates the `plan` field so we can report tier stats later.
+async function upgradePlumber(slug: string | undefined, plan: string) {
+  if (!slug || !supabase) return;
+  const patch: Record<string, unknown> = {
+    plan: plan === "premium" ? "premium" : "featured",
+    is_featured: plan === "featured" || plan === "premium",
+    is_premium: plan === "premium",
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("plumbers").update(patch).eq("slug", slug);
+  if (error) {
+    console.error(`Failed to upgrade plumber ${slug}:`, error);
+    return;
+  }
+  // Bust the Next.js page cache so the badge shows up immediately.
+  try {
+    revalidatePath("/");
+    revalidatePath(`/plumber/${slug}`);
+  } catch (e) {
+    console.warn("revalidatePath failed (non-fatal):", e);
+  }
+}
+
+// Reverse of upgradePlumber — used when a subscription is cancelled.
+// plumber_slug comes from subscription.metadata (threaded through at checkout time)
+// so we don't need to SELECT from claims.
+async function downgradePlumber(slug: string | undefined) {
+  if (!slug || !supabase) return;
+  const { error } = await supabase
+    .from("plumbers")
+    .update({
+      plan: "free",
+      is_featured: false,
+      is_premium: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", slug);
+  if (error) {
+    console.error(`Failed to downgrade plumber ${slug}:`, error);
+    return;
+  }
+  try {
+    revalidatePath("/");
+    revalidatePath(`/plumber/${slug}`);
+  } catch (e) {
+    console.warn("revalidatePath failed (non-fatal):", e);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -96,15 +160,20 @@ export async function POST(request: NextRequest) {
         amount_total?: number;
         currency?: string;
         subscription?: string;
-        metadata?: { claim_id?: string; plan?: string };
+        metadata?: { claim_id?: string; plan?: string; plumber_slug?: string };
       };
       const plan = session.metadata?.plan || "unknown";
       const claimId = session.metadata?.claim_id;
+      const plumberSlug = session.metadata?.plumber_slug;
       const email = session.customer_email || session.customer_details?.email || "";
       const name = session.customer_details?.name || "";
       const amount = ((session.amount_total ?? 0) / 100).toFixed(2);
 
-      await markClaimActive(claimId, session.subscription || "", plan);
+      // Run claim update and plumber upgrade in parallel — neither depends on the other.
+      await Promise.all([
+        markClaimActive(claimId, session.subscription || "", plan),
+        upgradePlumber(plumberSlug, plan),
+      ]);
 
       await notify({
         subject: `💰 NEW SUBSCRIPTION: ${plan.toUpperCase()} - $${amount}/mo (${name || email})`,
@@ -118,13 +187,20 @@ export async function POST(request: NextRequest) {
           subscription_id: session.subscription || "",
           session_id: session.id,
           claim_id: claimId || "",
+          plumber_slug: plumberSlug || "",
         },
       });
       break;
     }
 
     case "customer.subscription.deleted": {
-      const sub = event.data.object as { id: string; customer: string };
+      const sub = event.data.object as {
+        id: string;
+        customer: string;
+        metadata?: { plumber_slug?: string; plan?: string };
+      };
+      const plumberSlug = sub.metadata?.plumber_slug;
+      await downgradePlumber(plumberSlug);
       await notify({
         subject: `❌ Subscription cancelled: ${sub.id}`,
         kind: "claim",
@@ -132,6 +208,7 @@ export async function POST(request: NextRequest) {
           event: "subscription_cancelled",
           subscription_id: sub.id,
           customer_id: sub.customer,
+          plumber_slug: plumberSlug || "",
         },
       });
       break;

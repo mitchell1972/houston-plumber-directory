@@ -42,3 +42,4 @@ next-env.d.ts
 
 # outreach data (local only)
 /leads/
+.env*.local

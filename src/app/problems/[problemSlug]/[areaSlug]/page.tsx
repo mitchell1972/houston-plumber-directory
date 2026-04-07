@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { seoAreas, seoProblems, getAreaBySlug, getProblemBySlug } from "@/data/seo-data";
 import { generateProblemAreaContent } from "@/lib/content-engine";
-import { plumbers } from "@/data/plumbers";
+import { getPlumbers, getPlumbersByArea } from "@/lib/plumbers";
 import PlumberCard from "@/components/PlumberCard";
 import QuoteForm from "@/components/QuoteForm";
 import Link from "next/link";
@@ -60,7 +60,9 @@ export default async function ProblemAreaPage({
 
   const content = generateProblemAreaContent(area, problem);
 
-  const displayPlumbers = plumbers.slice(0, 5);
+  const areaMatches = await getPlumbersByArea(area.name);
+  const fallback = areaMatches.length > 0 ? areaMatches : await getPlumbers();
+  const displayPlumbers = fallback.slice(0, 5);
 
   const urgencyColors: Record<string, string> = {
     "call-now": "bg-red-600",

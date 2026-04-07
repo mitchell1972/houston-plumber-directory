@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
   const plan = body.plan as "featured" | "premium";
   const claimId = body.claimId as string | undefined;
   const email = body.email as string | undefined;
+  const plumberSlug = body.plumberSlug as string | undefined;
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const priceId = PRICE_IDS[plan];
@@ -40,6 +41,14 @@ export async function POST(request: NextRequest) {
   if (email) params.append("customer_email", email);
   if (claimId) params.append("metadata[claim_id]", claimId);
   params.append("metadata[plan]", plan);
+  // Thread plumber_slug through BOTH session metadata (for checkout.session.completed)
+  // AND subscription metadata (for customer.subscription.deleted). This avoids needing
+  // a SELECT policy on the claims table in the webhook.
+  if (plumberSlug) {
+    params.append("metadata[plumber_slug]", plumberSlug);
+    params.append("subscription_data[metadata][plumber_slug]", plumberSlug);
+    params.append("subscription_data[metadata][plan]", plan);
+  }
 
   try {
     const res = await fetch("https://api.stripe.com/v1/checkout/sessions", {

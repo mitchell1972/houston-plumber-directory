@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { seoAreas, seoServices, seoProblems, getAreaBySlug } from "@/data/seo-data";
 import { generateAreaLandingContent } from "@/lib/content-engine";
-import { plumbers } from "@/data/plumbers";
+import { getPlumbers, getPlumbersByArea } from "@/lib/plumbers";
 import PlumberCard from "@/components/PlumberCard";
 import QuoteForm from "@/components/QuoteForm";
 import Link from "next/link";
@@ -47,7 +47,11 @@ export default async function AreaLandingPage({
   if (!area) notFound();
 
   const content = generateAreaLandingContent(area);
-  const displayPlumbers = plumbers.slice(0, 6);
+  // Try to match plumbers whose `areas` column contains this area name;
+  // fall back to all plumbers (capped at 6) if none match.
+  const areaMatches = await getPlumbersByArea(area.name);
+  const fallback = areaMatches.length > 0 ? areaMatches : await getPlumbers();
+  const displayPlumbers = fallback.slice(0, 6);
 
   // Pick top services and problems relevant to this area
   const topServices = seoServices.slice(0, 8);

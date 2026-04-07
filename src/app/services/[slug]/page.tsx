@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
-import { services, plumbers } from "@/data/plumbers";
+import { services } from "@/data/plumbers";
+import { getPlumbersByService } from "@/lib/plumbers";
 import PlumberCard from "@/components/PlumberCard";
 import QuoteForm from "@/components/QuoteForm";
 import type { Metadata } from "next";
+
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return services.map((s) => ({ slug: s.slug }));
@@ -32,10 +35,8 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   if (!service) notFound();
 
   const serviceName = service.name;
-  const matchingPlumbers = plumbers.filter((p) =>
-    p.services.some((s) => s.toLowerCase().includes(serviceName.toLowerCase().split(" ")[0]))
-  );
-  const displayPlumbers = matchingPlumbers.length > 0 ? matchingPlumbers : plumbers.slice(0, 5);
+  const matchingPlumbers = await getPlumbersByService(serviceName);
+  const displayPlumbers = matchingPlumbers.slice(0, 10);
 
   const serviceSchema = {
     "@context": "https://schema.org",

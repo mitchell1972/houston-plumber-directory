@@ -1,7 +1,12 @@
 import PlumberCard from "@/components/PlumberCard";
 import QuoteForm from "@/components/QuoteForm";
 import Link from "next/link";
-import { plumbers, services, areas } from "@/data/plumbers";
+import { services, areas } from "@/data/plumbers";
+import { getPlumbers } from "@/lib/plumbers";
+
+// Revalidate every hour so paid upgrades (is_featured / is_premium) show up
+// on the homepage within 60 minutes without a full rebuild.
+export const revalidate = 3600;
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -55,9 +60,11 @@ const websiteSchema = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const plumbers = await getPlumbers();
   const premiumPlumbers = plumbers.filter((p) => p.premium);
   const regularPlumbers = plumbers.filter((p) => !p.premium);
+  const totalReviews = plumbers.reduce((a, p) => a + p.reviewCount, 0);
 
   return (
     <>
@@ -105,7 +112,7 @@ export default function Home() {
       <section className="bg-white border-b py-6">
         <div className="max-w-6xl mx-auto px-4 flex flex-wrap justify-center gap-8 text-center text-sm text-gray-600">
           <div><span className="block text-2xl font-bold text-blue-900">{plumbers.length}+</span>Licensed Plumbers</div>
-          <div><span className="block text-2xl font-bold text-blue-900">{plumbers.reduce((a, p) => a + p.reviewCount, 0).toLocaleString()}+</span>Verified Reviews</div>
+          <div><span className="block text-2xl font-bold text-blue-900">{totalReviews.toLocaleString()}+</span>Verified Reviews</div>
           <div><span className="block text-2xl font-bold text-blue-900">24/7</span>Emergency Service</div>
           <div><span className="block text-2xl font-bold text-blue-900">100%</span>Free Quotes</div>
         </div>
@@ -117,19 +124,26 @@ export default function Home() {
         <p className="text-gray-600 mb-8">Featured plumbers are verified, top-rated professionals with premium profiles.</p>
 
         {/* Featured / Premium */}
-        <div className="space-y-4 mb-8">
-          {premiumPlumbers.map((p) => (
-            <PlumberCard key={p.id} plumber={p} />
-          ))}
-        </div>
+        {premiumPlumbers.length > 0 && (
+          <div className="space-y-4 mb-8">
+            {premiumPlumbers.map((p) => (
+              <PlumberCard key={p.id} plumber={p} />
+            ))}
+          </div>
+        )}
 
-        {/* Regular listings */}
+        {/* Regular listings — cap at 30 on homepage for performance; link to full directory */}
         <h3 className="text-xl font-bold text-gray-800 mb-4 mt-12">All Houston Plumbers</h3>
         <div className="space-y-4">
-          {regularPlumbers.map((p) => (
+          {regularPlumbers.slice(0, 30).map((p) => (
             <PlumberCard key={p.id} plumber={p} />
           ))}
         </div>
+        {regularPlumbers.length > 30 && (
+          <p className="text-center text-sm text-gray-500 mt-6">
+            Showing 30 of {regularPlumbers.length} plumbers. Use the search or area pages to find more.
+          </p>
+        )}
       </section>
 
       {/* Services section for SEO */}

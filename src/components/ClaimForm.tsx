@@ -50,7 +50,12 @@ export default function ClaimForm({
         const checkoutRes = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan, claimId: claimJson.id, email: data.email }),
+          body: JSON.stringify({
+            plan,
+            claimId: claimJson.id,
+            email: data.email,
+            plumberSlug, // threaded into Stripe metadata so webhook can upgrade the right listing
+          }),
         });
         const checkoutJson = await checkoutRes.json();
         if (checkoutJson.url) {

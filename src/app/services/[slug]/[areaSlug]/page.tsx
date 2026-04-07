@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { seoAreas, seoServices, getAreaBySlug, getServiceBySlug } from "@/data/seo-data";
 import { generateServiceAreaContent } from "@/lib/content-engine";
-import { plumbers } from "@/data/plumbers";
+import { getPlumbers, getPlumbersByArea } from "@/lib/plumbers";
 import PlumberCard from "@/components/PlumberCard";
 import QuoteForm from "@/components/QuoteForm";
 import Link from "next/link";
@@ -60,12 +60,17 @@ export default async function ServiceAreaPage({
 
   const content = generateServiceAreaContent(area, service);
 
-  // Match plumbers by service keyword
+  // Prefer plumbers in this area; fall back to all plumbers if none match.
+  // All plumbers get the same DEFAULT_SERVICES list at import time, so
+  // keyword-filtering by service is a no-op on current data — we keep the
+  // filter call for future per-plumber service customization.
   const keyword = service.name.toLowerCase().split(" ")[0];
-  const matchingPlumbers = plumbers.filter((p) =>
+  const areaMatches = await getPlumbersByArea(area.name);
+  const pool = areaMatches.length > 0 ? areaMatches : await getPlumbers();
+  const filteredByService = pool.filter((p) =>
     p.services.some((s) => s.toLowerCase().includes(keyword))
   );
-  const displayPlumbers = matchingPlumbers.length > 0 ? matchingPlumbers : plumbers.slice(0, 5);
+  const displayPlumbers = (filteredByService.length > 0 ? filteredByService : pool).slice(0, 5);
 
   const serviceSchema = {
     "@context": "https://schema.org",
