@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { notify } from "@/lib/notify";
+import { supabase } from "@/lib/supabase";
 
 // Stripe webhook handler — verifies signature, processes events, updates claims, notifies you.
 //
@@ -16,8 +15,6 @@ import { notify } from "@/lib/notify";
 //   invoice.payment_succeeded        → recurring payment (silent, just logged)
 
 export const runtime = "nodejs"; // crypto requires Node runtime, not Edge
-
-const CLAIMS_FILE = path.join(process.cwd(), "leads", "claims.json");
 
 type StripeEvent = {
   id: string;
@@ -55,24 +52,17 @@ function verifyStripeSignature(payload: string, header: string | null, secret: s
 }
 
 async function markClaimActive(claimId: string | undefined, subscriptionId: string, plan: string) {
-  if (!claimId) return;
-  try {
-    const data = await readFile(CLAIMS_FILE, "utf-8");
-    const claims = JSON.parse(data);
-    const idx = claims.findIndex((c: { id: string }) => c.id === claimId);
-    if (idx === -1) return;
-    claims[idx] = {
-      ...claims[idx],
+  if (!claimId || !supabase) return;
+  const { error } = await supabase
+    .from("claims")
+    .update({
       status: "active",
-      stripeSubscriptionId: subscriptionId,
-      activatedPlan: plan,
-      activatedAt: new Date().toISOString(),
-    };
-    await mkdir(path.dirname(CLAIMS_FILE), { recursive: true });
-    await writeFile(CLAIMS_FILE, JSON.stringify(claims, null, 2));
-  } catch (err) {
-    console.error("Failed to mark claim active:", err);
-  }
+      stripe_subscription_id: subscriptionId,
+      activated_plan: plan,
+      activated_at: new Date().toISOString(),
+    })
+    .eq("id", claimId);
+  if (error) console.error("Failed to mark claim active:", error);
 }
 
 export async function POST(request: NextRequest) {
