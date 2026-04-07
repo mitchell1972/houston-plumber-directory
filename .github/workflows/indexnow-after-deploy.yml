@@ -1,0 +1,21 @@
+name: IndexNow after Vercel deploy
+
+on:
+  deployment_status:
+
+jobs:
+  ping-indexnow:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping IndexNow
+        run: |
+          set -euo pipefail
+          echo "Deployment URL: ${{ github.event.deployment_status.environment_url }}"
+          echo "Pinging IndexNow on the live domain..."
+          response=$(curl -sS -w "\nHTTP %{http_code}" \
+            "https://houstonplumberdirectory.com/api/indexnow")
+          echo "$response"
+          echo "$response" | grep -q "HTTP 200"
