@@ -198,6 +198,18 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* For Plumbers CTA */}
+      <section className="bg-gray-100 border-t border-gray-200 py-10">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <p className="text-sm uppercase tracking-wide text-blue-700 font-semibold">Are you a Houston plumber?</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-blue-900 mt-2 mb-3">List your business — get more calls</h2>
+          <p className="text-gray-700 mb-6">Claim your free listing or upgrade to Featured ($29/mo) for top placement on city + service pages.</p>
+          <Link href="/list-your-business" className="bg-blue-900 text-white px-8 py-4 rounded font-bold hover:bg-blue-800 transition inline-block">
+            List Your Business
+          </Link>
+        </div>
+      </section>
     </>
   );
 }

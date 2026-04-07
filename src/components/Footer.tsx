@@ -34,9 +34,9 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-bold mb-4">For Plumbers</h4>
           <ul className="space-y-2 text-sm">
-            <li><Link href="/get-quote" className="hover:text-yellow-400 transition">Claim Your Listing</Link></li>
-            <li><Link href="/get-quote" className="hover:text-yellow-400 transition">Premium Listings</Link></li>
-            <li><Link href="/get-quote" className="hover:text-yellow-400 transition">Advertising</Link></li>
+            <li><Link href="/list-your-business" className="hover:text-yellow-400 transition">Claim Your Listing</Link></li>
+            <li><Link href="/list-your-business#pricing" className="hover:text-yellow-400 transition">Premium Listings</Link></li>
+            <li><Link href="/list-your-business" className="hover:text-yellow-400 transition">Advertising</Link></li>
           </ul>
           <p className="text-xs mt-6 text-gray-500">&copy; {new Date().getFullYear()} HoustonPlumberPros. All rights reserved.</p>
         </div>
